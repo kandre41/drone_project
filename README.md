@@ -1,2 +1,3 @@
 # drone_project
-gestures for drone flight
+Set up:
+installed ultralytics then torch, then DJITelloPy from https://github.com/damiafuentes/DJITelloPy/blob/master/README.md 

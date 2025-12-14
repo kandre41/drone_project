@@ -1,1 +1,6 @@
 DJITelloPy/
+datasets/
+runs/
+settings/
+weights/
+*.pt
