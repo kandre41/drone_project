@@ -5,8 +5,8 @@ import cv2
 # 1. Load the YOLO model (Replace 'yolo11n.pt' with your specific model file path)
 # Use the path to your trained model weights or a pre-trained model like 'yolo11n.pt' for a general model.
 path="W:\VSCode\drone_project"
-model = YOLO(f'{path}\weights\\yolo11x-pose.engine') 
-
+#model = YOLO(f'{path}\weights\\yolo11x-pose.engine') 
+model = YOLO(f'{path}\weights\\yolo11l_hand_300.pt')
 # 2. Set the Webcam Source
 # '0' typically refers to the default primary camera (the built-in laptop camera or a single connected USB camera).
 # Use '1', '2', etc., if you have multiple cameras.
@@ -34,7 +34,7 @@ while cap.isOpened():
 
         # Visualize the results on the frame
         annotated_frame = results[0].plot()
-
+        
         # Display the annotated frame
         cv2.imshow("YOLO Inference", annotated_frame)
 
