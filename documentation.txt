@@ -1,0 +1,11 @@
+decisions based on pose detection
+takeoff: left arm raises
+land: both arms raised
+
+throttle: left arm up and down
+yaw: left arm left and right
+pitch: right arm front and back
+roll: right arm left and right
+
+
+

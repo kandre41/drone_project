@@ -1,53 +1,58 @@
 from ultralytics import YOLO
+from utils.utils import center_crop
 import cv2
 
-# --- Configuration ---
-# 1. Load the YOLO model (Replace 'yolo11n.pt' with your specific model file path)
-# Use the path to your trained model weights or a pre-trained model like 'yolo11n.pt' for a general model.
+# 1. Load the YOLO model 
 path="W:\VSCode\drone_project"
+image_path="datasets\\images"
+image="setup_test.jpg"
 #model = YOLO(f'{path}\weights\\yolo11x-pose.engine') 
-model = YOLO(f'{path}\weights\\yolo11l_hand_300.pt')
+model = YOLO(f'{path}\weights\\yolo11x-pose.engine')
+
 # 2. Set the Webcam Source
-# '0' typically refers to the default primary camera (the built-in laptop camera or a single connected USB camera).
-# Use '1', '2', etc., if you have multiple cameras.
+# '0' typically refers to the default primary camera 
 WEBCAM_SOURCE = 0
 
 # --- Start Webcam Stream ---
 # VideoCapture object to read frames from the camera
-cap = cv2.VideoCapture(WEBCAM_SOURCE)
+stream=False
+if stream:
+    cap = cv2.VideoCapture(WEBCAM_SOURCE)
+    if not cap.isOpened():
+        print("Error: Could not open webcam.")
+        exit()
+    print("Webcam successfully opened. Press 'q' to exit.")
+else: 
+    cap = cv2.imread(f'{path}\{image_path}\{image}')
+    cap = center_crop(cap,(640,640))
+# Check if the webcam was opened or if image was loaded
 
-# Check if the webcam was opened successfully
-if not cap.isOpened():
-    print("Error: Could not open webcam.")
-    exit()
-
-print("Webcam successfully opened. Press 'q' to exit.")
 
 # --- Live Inference Loop ---
-while cap.isOpened():
-    # Read a frame from the video
-    success, frame = cap.read()
-
-    if success:
-        # Run YOLO inference on the frame
-        results = model(frame)
-
-        # Visualize the results on the frame
-        annotated_frame = results[0].plot()
-        
-        # Display the annotated frame
-        cv2.imshow("YOLO Inference", annotated_frame)
-
-        # Break the loop if 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord("q"):
+if stream:
+    while cap.isOpened():
+        # Read a frame from the video
+        success, frame = cap.read()
+        if success:
+            results = model(frame)
+            annotated_frame = results[0].plot()
+            cv2.imshow("YOLO Inference", annotated_frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+        else:
             break
-    else:
-        # Break the loop if the end of the video is reached
-        break
-
+    cap.release()  # Release the webcam capture object
+else:
+    
+    results=model(cap)
+    annotated_frame=results[0].plot()
+    cv2.imshow('Image', annotated_frame)
+    kpts = results[0].keypoints.data.detach().cpu().numpy()[:,:10]  # x, y, visibility (if available)
+    print(kpts)
+    cv2.waitKey(0)
+    
 
 # --- Cleanup ---
-cap.release()          # Release the webcam capture object
 cv2.destroyAllWindows()  # Close all OpenCV display windows
 del results
 del model
