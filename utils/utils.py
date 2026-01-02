@@ -15,7 +15,9 @@ def center_crop(img,size):
         y_min=square_dim_half
         y_max=h-square_dim_half
         return cv2.resize(img[y_min:y_max,:],size,interpolation=cv2.INTER_AREA)
-    
+
+
+
 if __name__ == '__main__':
     pass
 

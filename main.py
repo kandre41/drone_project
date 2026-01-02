@@ -47,8 +47,8 @@ else:
     results=model(cap)
     annotated_frame=results[0].plot()
     cv2.imshow('Image', annotated_frame)
-    kpts = results[0].keypoints.data.detach().cpu().numpy()[:,:10]  # x, y, visibility (if available)
-    print(kpts)
+    xyn = results[0].keypoints.xyn.detach().cpu().numpy()[:,:11]  # x, y, visibility (if available)
+    print(xyn)
     cv2.waitKey(0)
     
 
