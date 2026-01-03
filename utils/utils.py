@@ -1,7 +1,7 @@
 import cv2
-def center_crop(img,size):
+def center_crop(img,size): #center crops and downsamples to lower, square resolution that yolo expects
 
-    h,w=img.shape[:2]
+    h,w=img.shape[:2] #y,x
 
     min_dim=min(h,w)
     max_dim=max(h,w)

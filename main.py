@@ -3,11 +3,11 @@ from utils.utils import center_crop
 import cv2
 
 # 1. Load the YOLO model 
-path="W:\VSCode\drone_project"
+path="W:\\VSCode\\drone_project"
 image_path="datasets\\images"
 image="setup_test.jpg"
 #model = YOLO(f'{path}\weights\\yolo11x-pose.engine') 
-model = YOLO(f'{path}\weights\\yolo11x-pose.engine')
+model = YOLO(f'{path}\\weights\\yolo11x-pose.engine')
 
 # 2. Set the Webcam Source
 # '0' typically refers to the default primary camera 
