@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 from utils.utils import center_crop
 import cv2
-
+import pandas as pd
 # 1. Load the YOLO model 
 path="W:\\VSCode\\drone_project"
 image_path="datasets\\images"
@@ -27,7 +27,7 @@ else:
     cap = center_crop(cap,(640,640))
 # Check if the webcam was opened or if image was loaded
 
-
+df_list=[]
 # --- Live Inference Loop ---
 if stream:
     while cap.isOpened():
@@ -47,8 +47,41 @@ else:
     results=model(cap)
     annotated_frame=results[0].plot()
     cv2.imshow('Image', annotated_frame)
-    xyn = results[0].keypoints.xyn.detach().cpu().numpy()[:,:11]  # x, y, visibility (if available)
-    print(xyn)
+    xy = results[0].keypoints.xy.detach().cpu().numpy()[:,:13]  # x, y, visibility (if available)
+    print(xy)
+    print(xy.shape)
+    df_list.append({
+        "nose_x": xy[0,0,0],
+        "nose_y": xy[0,0,1],
+        "left_eye_x": xy[0,1,0],
+        "left_eye_y": xy[0,1,1],
+        "right_eye_x": xy[0,2,0],
+        "right_eye_y": xy[0,2,1],
+        "left_ear_x": xy[0,3,0],
+        "left_ear_y": xy[0,3,1],
+        "right_ear_x": xy[0,4,0],
+        "right_ear_y": xy[0,4,1],
+        "left_shoulder_x": xy[0,5,0],
+        "left_shoulder_y": xy[0,5,1],
+        "right_shoulder_x": xy[0,6,0],
+        "right_shoulder_y": xy[0,6,1],
+        "left_elbow_x": xy[0,7,0],
+        "left_elbow_y": xy[0,7,1],
+        "right_elbow_x": xy[0,8,0],
+        "right_elbow_y": xy[0,8,1],
+        "left_wrist_x": xy[0,9,0],
+        "left_wrist_y": xy[0,9,1],
+        "right_wrist_x": xy[0,10,0],
+        "right_wrist_y": xy[0,10,1],
+        "left_hip_x": xy[0,11,0],
+        "left_hip_y": xy[0,11,1],
+        "right_hip_x": xy[0,12,0],
+        "right_hip_y": xy[0,12,1]
+    })
+    print(df_list)
+    df=pd.DataFrame(df_list)
+    print(df)
+
     cv2.waitKey(0)
     
 
