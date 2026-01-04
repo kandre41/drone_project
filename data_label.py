@@ -9,22 +9,23 @@
 multi-target regression will have [throttle, pitch, roll, yaw]
 
 """
-
+from utils import utils
 from ultralytics import YOLO
 import os
 import pandas as pd
-
+import numpy as np
 path="W:\\VSCode\\drone_project"
 frames_path='W:\\VSCode\\drone_project\\datasets\\images'
 
 folder_name = 'demo1' #change the name of the folder containing the images within the \\images folder
 
 model = YOLO(f'{path}\\weights\\yolo11x-pose.engine')
-
-throttle = [()]
-pitch = [()]
-roll = [()]
-yaw = [()]
+start_frame=35
+end_frame=422
+throttle = [(364,0,-1,378),(379,-1,1,394),(395,1,-1,414),(415,-1,0,422)]
+pitch = [(172,0,-1,178),(189,-1,0,196),(199,0,1,209),(216,1,0,225),(230,0,-1,240),(241,-1,0,249),(252,0,-1,261),(262,-1,0,267),(269,0,1,280),(281,1,0,289),(294,0,1,303),(304,1,0,311)] #p
+roll = [(127,0,-1,135),(136,-1,0,146),(150,0,1,161),(162,1,0,166),(230,0,-1,240),(241,-1,0,249),(252,0,1,261),(262,1,0,267),(269,0,-1,280),(281,-1,0,289),(294,0,1,303),(304,1,0,311)] #r
+yaw = [(49,0,-1,54),(61,-1,1,67),(72,1,0,77)]
 
 results = model.predict(source=f'{frames_path}\\{folder_name}', half=True, device='cuda:0', stream=True)
 
@@ -89,4 +90,38 @@ for result in results:
 df=pd.DataFrame(df_list)
 print(df.head())
 print("df shape: ", df.shape)
-    
+
+frame_count = df.shape[0]
+#normalization and scaling process
+
+x_columns=df.filter(like='_x').columns
+y_columns=df.filter(like='_y').columns
+df[x_columns] = df[x_columns].sub(df['nose_x'],axis=0)
+df[y_columns] = df[y_columns].sub(df['nose_y'],axis=0)
+shoulder_dist=np.sqrt((df['right_shoulder_x']-df['left_shoulder_x'])**2+
+                          (df['right_shoulder_y']-df['left_shoulder_y'])**2)
+# Replace 0 or NaN with the average to prevent math errors
+avg_dist = shoulder_dist.median()
+safe_dist = shoulder_dist.replace(0, np.nan).fillna(avg_dist)
+df[df.columns] = df[df.columns].div(shoulder_dist,axis=0)
+
+#adding labels which need interpolation and also ffill and bfill 
+throttle_arr = np.full(frame_count,np.nan)
+pitch_arr = np.full(frame_count,np.nan)
+roll_arr = np.full(frame_count,np.nan)
+yaw_arr = np.full(frame_count,np.nan)
+
+throttle_series = pd.Series(utils.interpolater(throttle, throttle_arr)).ffill().bfill()
+pitch_series = pd.Series(utils.interpolater(pitch,pitch_arr)).ffill().bfill()
+roll_series = pd.Series(utils.interpolater(roll, roll_arr)).ffill().bfill()
+yaw_series = pd.Series(utils.interpolater(yaw, yaw_arr)).ffill().bfill()
+
+df['throttle'] = throttle_series
+df['pitch'] = pitch_series
+df['roll'] = roll_series
+df['yaw'] = yaw_series
+
+print(df.head())
+
+df.to_parquet(path=os.path.join(path,'datasets','labeled_data',f"{folder_name}.parquet"))
+df.to_csv(os.path.join(path,'datasets','labeled_data',f"{folder_name}.csv"), index=False)
