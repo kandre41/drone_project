@@ -1,6 +1,6 @@
 import cv2
 import time
-from utils.utils import center_crop
+from utils import center_crop
 path="W:\\VSCode\\drone_project\\datasets\\videos"
 video_name = 'demo1'
 cap = cv2.VideoCapture(f'{path}\\{video_name}.mp4')

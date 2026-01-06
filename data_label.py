@@ -9,7 +9,7 @@
 multi-target regression will have [throttle, pitch, roll, yaw]
 
 """
-from utils import utils
+from utils import interpolater
 from ultralytics import YOLO
 import os
 import pandas as pd
@@ -40,7 +40,7 @@ for result in results:
     save_path = os.path.join(output_dir, f"processed_{original_name}")
     result.save(filename=save_path)
 
-    xy = result.keypoints.xy.detach().cpu().numpy()[:,:13]
+    xy = result.keypoints.data.detach().cpu().numpy()[:,:13]
     #shape is person, 13 keypoints, (x y)
     """
     1- nose
@@ -57,34 +57,47 @@ for result in results:
     12- left_hip
     13- right_hip
     """
-    if xy.shape==(1,13,2) or xy.shape==(2,13,2):
+    if xy.shape==(1,13,3) or xy.shape==(2,13,3):
         df_list.append({
             "nose_x": xy[0,0,0],
             "nose_y": xy[0,0,1],
+            "nose_conf": xy[0,0,2],
             "left_eye_x": xy[0,1,0],
             "left_eye_y": xy[0,1,1],
+            "left_eye_conf": xy[0,1,2],
             "right_eye_x": xy[0,2,0],
             "right_eye_y": xy[0,2,1],
+            "right_eye_conf": xy[0,2,2],
             "left_ear_x": xy[0,3,0],
             "left_ear_y": xy[0,3,1],
+            "left_ear_conf": xy[0,3,2],
             "right_ear_x": xy[0,4,0],
             "right_ear_y": xy[0,4,1],
+            "right_ear_conf": xy[0,4,2],
             "left_shoulder_x": xy[0,5,0],
             "left_shoulder_y": xy[0,5,1],
+            "left_shoulder_conf": xy[0,5,2],
             "right_shoulder_x": xy[0,6,0],
             "right_shoulder_y": xy[0,6,1],
+            "right_shoulder_conf": xy[0,6,2],
             "left_elbow_x": xy[0,7,0],
             "left_elbow_y": xy[0,7,1],
+            "left_elbow_conf": xy[0,7,2],
             "right_elbow_x": xy[0,8,0],
             "right_elbow_y": xy[0,8,1],
+            "right_elbow_conf": xy[0,8,2],
             "left_wrist_x": xy[0,9,0],
             "left_wrist_y": xy[0,9,1],
+            "left_wrist_conf": xy[0,9,2],
             "right_wrist_x": xy[0,10,0],
             "right_wrist_y": xy[0,10,1],
+            "right_wrist_conf": xy[0,10,2],
             "left_hip_x": xy[0,11,0],
             "left_hip_y": xy[0,11,1],
+            "left_hip_conf": xy[0,11,2],
             "right_hip_x": xy[0,12,0],
-            "right_hip_y": xy[0,12,1]
+            "right_hip_y": xy[0,12,1],
+            "right_hip_conf": xy[0,12,2]
         })
 
 df=pd.DataFrame(df_list)
@@ -103,7 +116,8 @@ shoulder_dist=np.sqrt((df['right_shoulder_x']-df['left_shoulder_x'])**2+
 # Replace 0 or NaN with the average to prevent math errors
 avg_dist = shoulder_dist.median()
 safe_dist = shoulder_dist.replace(0, np.nan).fillna(avg_dist)
-df[df.columns] = df[df.columns].div(shoulder_dist,axis=0)
+df[x_columns] = df[x_columns].div(shoulder_dist,axis=0)
+df[y_columns] = df[y_columns].div(shoulder_dist,axis=0)
 
 #adding labels which need interpolation and also ffill and bfill 
 throttle_arr = np.full(frame_count,np.nan)
@@ -111,16 +125,16 @@ pitch_arr = np.full(frame_count,np.nan)
 roll_arr = np.full(frame_count,np.nan)
 yaw_arr = np.full(frame_count,np.nan)
 
-throttle_series = pd.Series(utils.interpolater(throttle, throttle_arr)).ffill().bfill()
-pitch_series = pd.Series(utils.interpolater(pitch,pitch_arr)).ffill().bfill()
-roll_series = pd.Series(utils.interpolater(roll, roll_arr)).ffill().bfill()
-yaw_series = pd.Series(utils.interpolater(yaw, yaw_arr)).ffill().bfill()
+throttle_series = pd.Series(interpolater(throttle, throttle_arr)).ffill().bfill()
+pitch_series = pd.Series(interpolater(pitch,pitch_arr)).ffill().bfill()
+roll_series = pd.Series(interpolater(roll, roll_arr)).ffill().bfill()
+yaw_series = pd.Series(interpolater(yaw, yaw_arr)).ffill().bfill()
 
-df['throttle'] = throttle_series
-df['pitch'] = pitch_series
-df['roll'] = roll_series
-df['yaw'] = yaw_series
-
+df['throttle'] = throttle_series.astype(np.float32)
+df['pitch'] = pitch_series.astype(np.float32)
+df['roll'] = roll_series.astype(np.float32)
+df['yaw'] = yaw_series.astype(np.float32)
+df=df.loc[start_frame:end_frame-1]
 print(df.head())
 
 df.to_parquet(path=os.path.join(path,'datasets','labeled_data',f"{folder_name}.parquet"))
