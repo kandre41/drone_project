@@ -130,10 +130,10 @@ pitch_series = pd.Series(interpolater(pitch,pitch_arr)).ffill().bfill()
 roll_series = pd.Series(interpolater(roll, roll_arr)).ffill().bfill()
 yaw_series = pd.Series(interpolater(yaw, yaw_arr)).ffill().bfill()
 
-df['throttle'] = throttle_series.astype(np.float32)
-df['pitch'] = pitch_series.astype(np.float32)
-df['roll'] = roll_series.astype(np.float32)
-df['yaw'] = yaw_series.astype(np.float32)
+df['target_throttle'] = throttle_series.astype(np.float32)
+df['target_pitch'] = pitch_series.astype(np.float32)
+df['target_roll'] = roll_series.astype(np.float32)
+df['target_yaw'] = yaw_series.astype(np.float32)
 df=df.loc[start_frame:end_frame-1]
 print(df.head())
 
