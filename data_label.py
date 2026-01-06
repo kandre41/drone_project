@@ -57,7 +57,7 @@ for result in results:
     12- left_hip
     13- right_hip
     """
-    if xy.shape==(1,13,3) or xy.shape==(2,13,3):
+    if xy.shape==(1,13,3) or xy.shape==(2,13,3): #a few frames had two people detected by the model
         df_list.append({
             "nose_x": xy[0,0,0],
             "nose_y": xy[0,0,1],
@@ -109,8 +109,8 @@ frame_count = df.shape[0]
 
 x_columns=df.filter(like='_x').columns
 y_columns=df.filter(like='_y').columns
-df[x_columns] = df[x_columns].sub(df['nose_x'],axis=0)
-df[y_columns] = df[y_columns].sub(df['nose_y'],axis=0)
+df[x_columns] = df[x_columns].sub((df['right_shoulder_x']+df['left_shoulder_x'])/2,axis=0)
+df[y_columns] = df[y_columns].sub((df['right_shoulder_y']+df['left_shoulder_y'])/2,axis=0)
 shoulder_dist=np.sqrt((df['right_shoulder_x']-df['left_shoulder_x'])**2+
                           (df['right_shoulder_y']-df['left_shoulder_y'])**2)
 # Replace 0 or NaN with the average to prevent math errors
@@ -124,7 +124,7 @@ throttle_arr = np.full(frame_count,np.nan)
 pitch_arr = np.full(frame_count,np.nan)
 roll_arr = np.full(frame_count,np.nan)
 yaw_arr = np.full(frame_count,np.nan)
-
+#convert to series and fill nan
 throttle_series = pd.Series(interpolater(throttle, throttle_arr)).ffill().bfill()
 pitch_series = pd.Series(interpolater(pitch,pitch_arr)).ffill().bfill()
 roll_series = pd.Series(interpolater(roll, roll_arr)).ffill().bfill()
@@ -138,4 +138,4 @@ df=df.loc[start_frame:end_frame-1]
 print(df.head())
 
 df.to_parquet(path=os.path.join(path,'datasets','labeled_data',f"{folder_name}.parquet"))
-df.to_csv(os.path.join(path,'datasets','labeled_data',f"{folder_name}.csv"), index=False)
+df.to_csv(os.path.join(path,'datasets','labeled_data',f"{folder_name}.csv"), index=False) #csv just to visually inspect
