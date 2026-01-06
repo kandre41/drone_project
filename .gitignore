@@ -4,3 +4,4 @@ runs/
 settings/
 weights/
 *.pt
+__pycache__/
