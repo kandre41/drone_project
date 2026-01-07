@@ -14,10 +14,10 @@ from ultralytics import YOLO
 import os
 import pandas as pd
 import numpy as np
-path="W:\\VSCode\\drone_project"
-frames_path='W:\\VSCode\\drone_project\\datasets\\images'
+path=r"W:\VSCode\drone_project"
+frames_path=r'W:\VSCode\drone_project\datasets\images'
 
-folder_name = 'demo1' #change the name of the folder containing the images within the \\images folder
+folder_name = 'demo1' #change the name of the folder containing the images within the \images folder
 
 model = YOLO(f'{path}\\weights\\yolo11x-pose.engine')
 start_frame=35

@@ -10,21 +10,7 @@ import pandas as pd
 import copy
 import numpy as np
 from models import PoseControlNet
-
-# --- CONFIGURATION --- 
-CONFIG = { 
-    'parquet_path': r'W:\\VSCode\\drone_project\\datasets\\labeled_data\\demo1.parquet',
-    'test_size': 0.2,
-    'random_seed': 42,
-    'batch_size': 32,
-    'learning_rate': 0.001,
-    'num_epochs': 1000,
-    'input_dim': 13,
-    'output_dim': 4,
-    'patience': 100,
-    'save': True
-}
-
+import yaml
 # --- 1. DATA PREPARATION ---
 def get_dataloaders(config: dict):
     df = pd.read_parquet(config['parquet_path'])
@@ -92,6 +78,8 @@ def evaluate(model, dataloader, criterion, device):
 
 # --- 3. MAIN SCRIPT ---
 def main():
+    with open(r'W:\VSCode\drone_project\settings\mlp_train.yaml', 'r') as file:
+        CONFIG = yaml.safe_load(file)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
@@ -129,7 +117,7 @@ def main():
     print(f"Final Test Loss: {final_loss:.4f}")
     
     if CONFIG['save']:
-        save_path='W:\\VSCode\\drone_project\\weights\\pose_control_model.pt'
+        save_path=r'W:\VSCode\drone_project\weights\pose_control_model.pt'
         torch.save(best_model.state_dict(), save_path)
 
 if __name__ == "__main__":
