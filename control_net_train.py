@@ -11,10 +11,18 @@ import copy
 import numpy as np
 from models import PoseControlNet
 import yaml
+import glob
 # --- 1. DATA PREPARATION ---
 def get_dataloaders(config: dict):
-    df = pd.read_parquet(config['parquet_path'])
-    
+    path = config['parquet_path']
+    if os.path.isdir(path):
+        files=glob.glob(os.path.join(path,"*.parquet"))
+        if not files:
+            raise FileNotFoundError("parquets aren't found")
+        df = pd.concat([pd.read_parquet(f) for f in files],ignore_index=True)
+    else:
+        df=pd.read_parquet(path)
+
     y_cols = df.filter(like='target').columns
     x_cols = [col for col in df.columns if col not in y_cols]
     
@@ -25,6 +33,7 @@ def get_dataloaders(config: dict):
     X_tensor = torch.tensor(X, dtype=torch.float32)
     y_tensor = torch.tensor(y, dtype=torch.float32)
     
+    del df
     # Split
     X_train, X_test, y_train, y_test = train_test_split(
         X_tensor, y_tensor, 
@@ -36,8 +45,8 @@ def get_dataloaders(config: dict):
     train_dataset = TensorDataset(X_train, y_train)
     test_dataset = TensorDataset(X_test, y_test)
 
-    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False, pin_memory=True)
     
     return train_loader, test_loader
 
@@ -110,7 +119,7 @@ def main():
             best_test_loss=val_loss
             best_model=copy.deepcopy(model)
         #log train loss and val loss
-        print(f"Epoch [{epoch+1}/{CONFIG['num_epochs']}] | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+        print(f"Epoch [{epoch+1}/{CONFIG['num_epochs']}] | Train Loss: {train_loss:.6f} | Val Loss: {val_loss:.6f}")
 
     # Final Evaluation
     final_loss = evaluate(best_model, test_loader, criterion, device)

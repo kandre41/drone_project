@@ -1,7 +1,7 @@
 DJITelloPy/
 datasets/
 runs/
-settings/
+
 weights/
 *.pt
 __pycache__/

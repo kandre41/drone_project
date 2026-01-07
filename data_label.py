@@ -17,15 +17,15 @@ import numpy as np
 path=r"W:\VSCode\drone_project"
 frames_path=r'W:\VSCode\drone_project\datasets\images'
 
-folder_name = 'demo1' #change the name of the folder containing the images within the \images folder
+folder_name = 'demo3' #change the name of the folder containing the images within the \images folder
 
 model = YOLO(f'{path}\\weights\\yolo11x-pose.engine')
-start_frame=35
-end_frame=422
-throttle = [(364,0,-1,378),(379,-1,1,394),(395,1,-1,414),(415,-1,0,422)]
-pitch = [(172,0,-1,178),(189,-1,0,196),(199,0,1,209),(216,1,0,225),(230,0,-1,240),(241,-1,0,249),(252,0,-1,261),(262,-1,0,267),(269,0,1,280),(281,1,0,289),(294,0,1,303),(304,1,0,311)] #p
-roll = [(127,0,-1,135),(136,-1,0,146),(150,0,1,161),(162,1,0,166),(230,0,-1,240),(241,-1,0,249),(252,0,1,261),(262,1,0,267),(269,0,-1,280),(281,-1,0,289),(294,0,1,303),(304,1,0,311)] #r
-yaw = [(49,0,-1,54),(61,-1,1,67),(72,1,0,77)]
+start_frame=1
+end_frame=232
+throttle = [(1,0,0,232)]
+pitch = [(12,0,1,37),(41,1,-1,90),(91,-1,0,108),(119,0,-1,135),(145,-1,0,161),(185,0,1,211),(212,1,0,226)] #p
+roll = [(1,0,0,232)] #r
+yaw = [(1,0,0,232)]
 
 results = model.predict(source=f'{frames_path}\\{folder_name}', half=True, device='cuda:0', stream=True)
 
