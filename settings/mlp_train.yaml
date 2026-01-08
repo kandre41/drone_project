@@ -1,12 +1,14 @@
-  parquet_path: "W:/VSCode/drone_project/datasets/labeled_data" #note: yaml likes forward slashes
-
+  parquet_path: "W:/VSCode/drone_project/datasets/labeled_data/demo2.parquet" #note: yaml likes forward slashes /demo3.parquet
+  scaler_path: "W:/VSCode/drone_project/scaler/scaler.bin"
   test_size: 0.2
   random_seed: 42
   input_dim: 13
-  output_dim: 4
+  output_dim: 1
 
-  batch_size: 32
-  learning_rate: 0.001
+  batch_size: 64
+  learning_rate: 0.0001
   num_epochs: 1000
-  patience: 20
+  patience: 15
+  l1: 0.001
+  l2: 0.001
   save: true

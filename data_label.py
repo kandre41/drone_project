@@ -9,7 +9,7 @@
 multi-target regression will have [throttle, pitch, roll, yaw]
 
 """
-from utils import interpolater
+from utils import interpolater, keypoint_mapper
 from ultralytics import YOLO
 import os
 import pandas as pd
@@ -17,15 +17,15 @@ import numpy as np
 path=r"W:\VSCode\drone_project"
 frames_path=r'W:\VSCode\drone_project\datasets\images'
 
-folder_name = 'demo3' #change the name of the folder containing the images within the \images folder
+folder_name = 'demo2' #change the name of the folder containing the images within the \images folder
 
 model = YOLO(f'{path}\\weights\\yolo11x-pose.engine')
 start_frame=1
-end_frame=232
-throttle = [(1,0,0,232)]
-pitch = [(12,0,1,37),(41,1,-1,90),(91,-1,0,108),(119,0,-1,135),(145,-1,0,161),(185,0,1,211),(212,1,0,226)] #p
-roll = [(1,0,0,232)] #r
-yaw = [(1,0,0,232)]
+end_frame=308
+throttle = [(28,0,-1,47),(48,-1,0,59),(71,0,1,87),(88,1,0,105),(112,0,-1,125),(130,-1,0,139),(145,0,1,159),(160,1,-0.5,176),(178,-0.5,0,185),(223,0,-1,235),(237,-1,0,247),(259,0,1,273),(276,1,0,288)]
+pitch = [(1,0,0,308)] #p
+roll = [(1,0,0,308)] #r
+yaw = [(1,0,0,308)]
 
 results = model.predict(source=f'{frames_path}\\{folder_name}', half=True, device='cuda:0', stream=True)
 
@@ -58,47 +58,7 @@ for result in results:
     13- right_hip
     """
     if xy.shape==(1,13,3) or xy.shape==(2,13,3): #a few frames had two people detected by the model
-        df_list.append({
-            "nose_x": xy[0,0,0],
-            "nose_y": xy[0,0,1],
-            "nose_conf": xy[0,0,2],
-            "left_eye_x": xy[0,1,0],
-            "left_eye_y": xy[0,1,1],
-            "left_eye_conf": xy[0,1,2],
-            "right_eye_x": xy[0,2,0],
-            "right_eye_y": xy[0,2,1],
-            "right_eye_conf": xy[0,2,2],
-            "left_ear_x": xy[0,3,0],
-            "left_ear_y": xy[0,3,1],
-            "left_ear_conf": xy[0,3,2],
-            "right_ear_x": xy[0,4,0],
-            "right_ear_y": xy[0,4,1],
-            "right_ear_conf": xy[0,4,2],
-            "left_shoulder_x": xy[0,5,0],
-            "left_shoulder_y": xy[0,5,1],
-            "left_shoulder_conf": xy[0,5,2],
-            "right_shoulder_x": xy[0,6,0],
-            "right_shoulder_y": xy[0,6,1],
-            "right_shoulder_conf": xy[0,6,2],
-            "left_elbow_x": xy[0,7,0],
-            "left_elbow_y": xy[0,7,1],
-            "left_elbow_conf": xy[0,7,2],
-            "right_elbow_x": xy[0,8,0],
-            "right_elbow_y": xy[0,8,1],
-            "right_elbow_conf": xy[0,8,2],
-            "left_wrist_x": xy[0,9,0],
-            "left_wrist_y": xy[0,9,1],
-            "left_wrist_conf": xy[0,9,2],
-            "right_wrist_x": xy[0,10,0],
-            "right_wrist_y": xy[0,10,1],
-            "right_wrist_conf": xy[0,10,2],
-            "left_hip_x": xy[0,11,0],
-            "left_hip_y": xy[0,11,1],
-            "left_hip_conf": xy[0,11,2],
-            "right_hip_x": xy[0,12,0],
-            "right_hip_y": xy[0,12,1],
-            "right_hip_conf": xy[0,12,2]
-        })
+        df_list.append(keypoint_mapper(xy))
 
 df=pd.DataFrame(df_list)
 print(df.head())
@@ -131,9 +91,9 @@ roll_series = pd.Series(interpolater(roll, roll_arr)).ffill().bfill()
 yaw_series = pd.Series(interpolater(yaw, yaw_arr)).ffill().bfill()
 
 df['target_throttle'] = throttle_series.astype(np.float32)
-df['target_pitch'] = pitch_series.astype(np.float32)
-df['target_roll'] = roll_series.astype(np.float32)
-df['target_yaw'] = yaw_series.astype(np.float32)
+#df['target_pitch'] = pitch_series.astype(np.float32)
+#df['target_roll'] = roll_series.astype(np.float32)
+#df['target_yaw'] = yaw_series.astype(np.float32)
 df=df.loc[start_frame:end_frame-1]
 print(df.head())
 

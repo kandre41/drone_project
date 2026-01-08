@@ -6,7 +6,7 @@ class PoseControlNet(nn.Module):
         
         # Input size: Keypoints * 3 (x, y, confidence)
         input_size = num_keypoints * 3
-        
+
         self.net = nn.Sequential(
             # Layer 1: Expansion
             nn.Linear(input_size, 128),
