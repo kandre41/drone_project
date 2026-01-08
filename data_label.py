@@ -17,15 +17,15 @@ import numpy as np
 path=r"W:\VSCode\drone_project"
 frames_path=r'W:\VSCode\drone_project\datasets\images'
 
-folder_name = 'demo2' #change the name of the folder containing the images within the \images folder
+folder_name = 'demo6' #change the name of the folder containing the images within the \images folder
 
 model = YOLO(f'{path}\\weights\\yolo11x-pose.engine')
 start_frame=1
-end_frame=308
-throttle = [(28,0,-1,47),(48,-1,0,59),(71,0,1,87),(88,1,0,105),(112,0,-1,125),(130,-1,0,139),(145,0,1,159),(160,1,-0.5,176),(178,-0.5,0,185),(223,0,-1,235),(237,-1,0,247),(259,0,1,273),(276,1,0,288)]
-pitch = [(1,0,0,308)] #p
-roll = [(1,0,0,308)] #r
-yaw = [(1,0,0,308)]
+end_frame=571
+throttle = [(1,0,0,571)]
+pitch = [(1,0,0,571)] #p
+roll = [(1,0,0,571)] #r
+yaw = [(1,0,0,571)]
 
 results = model.predict(source=f'{frames_path}\\{folder_name}', half=True, device='cuda:0', stream=True)
 
@@ -75,7 +75,7 @@ shoulder_dist=np.sqrt((df['right_shoulder_x']-df['left_shoulder_x'])**2+
                           (df['right_shoulder_y']-df['left_shoulder_y'])**2)
 # Replace 0 or NaN with the average to prevent math errors
 avg_dist = shoulder_dist.median()
-safe_dist = shoulder_dist.replace(0, np.nan).fillna(avg_dist)
+should_dist = shoulder_dist.replace(0, np.nan).fillna(avg_dist)
 df[x_columns] = df[x_columns].div(shoulder_dist,axis=0)
 df[y_columns] = df[y_columns].div(shoulder_dist,axis=0)
 
@@ -91,9 +91,9 @@ roll_series = pd.Series(interpolater(roll, roll_arr)).ffill().bfill()
 yaw_series = pd.Series(interpolater(yaw, yaw_arr)).ffill().bfill()
 
 df['target_throttle'] = throttle_series.astype(np.float32)
-#df['target_pitch'] = pitch_series.astype(np.float32)
-#df['target_roll'] = roll_series.astype(np.float32)
-#df['target_yaw'] = yaw_series.astype(np.float32)
+df['target_pitch'] = pitch_series.astype(np.float32)
+df['target_roll'] = roll_series.astype(np.float32)
+df['target_yaw'] = yaw_series.astype(np.float32)
 df=df.loc[start_frame:end_frame-1]
 print(df.head())
 

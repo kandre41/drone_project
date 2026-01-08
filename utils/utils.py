@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import plotly.graph_objects as go
+import pandas as pd
 def center_crop(img,size): #center crops and downsamples to lower, square resolution that yolo expects
 
     h,w=img.shape[:2] #y,x
@@ -72,7 +73,6 @@ def plotter(train_loss, val_loss):
     epochs=list(range(len(train_loss)))
     fig = go.Figure()
 
-    # Add training loss trace
     fig.add_trace(go.Scatter(
         x=epochs,
         y=train_loss,
@@ -81,7 +81,6 @@ def plotter(train_loss, val_loss):
         line=dict(color='blue')
     ))
 
-    # Add validation loss trace
     fig.add_trace(go.Scatter(
         x=epochs,
         y=val_loss,
@@ -90,16 +89,40 @@ def plotter(train_loss, val_loss):
         line=dict(color='red')
     ))
 
-    # Update layout
     fig.update_layout(
         title='Training and Validation Loss',
         xaxis_title='Epochs',
         yaxis_title='Loss',
         hovermode='x unified'
     )
-
-    # Show the plot
     fig.show()
+def signed_angle(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y):
+    angle_ba = np.arctan2(p1_y - p2_y, p1_x - p2_x)
+    angle_bc = np.arctan2(p3_y - p2_y, p3_x - p2_x)
+    
+    delta_angle = angle_bc - angle_ba
+    
+    if delta_angle > np.pi:
+        delta_angle -= 2 * np.pi
+    elif delta_angle <= -np.pi:
+        delta_angle += 2 * np.pi
+        
+    return delta_angle
+def feature_engineer(df: pd.DataFrame) -> pd.DataFrame:
+    df['left_forearm_len'] = euclidean_distance(df['left_wrist_x'],df['left_elbow_x'],df['left_wrist_y'],df['left_elbow_y'])
+    df['right_forearm_len'] = euclidean_distance(df['right_wrist_x'],df['right_elbow_x'],df['right_wrist_y'],df['right_elbow_y'])
+    df['right_upper_arm_len'] = euclidean_distance(df['right_shoulder_x'],df['right_elbow_x'],df['right_shoulder_y'],df['right_elbow_y'])
+    df['right_elbow_angle'] = signed_angle(df['right_wrist_x'], df['right_wrist_y'], 
+                                         df['right_elbow_x'], df['right_elbow_y'],
+                                         df['right_shoulder_x'], df['right_shoulder_y'])
+    df['left_elbow_angle'] = signed_angle(df['left_wrist_x'], df['left_wrist_y'], 
+                                         df['left_elbow_x'], df['left_elbow_y'],
+                                         df['left_shoulder_x'], df['left_shoulder_y'])
+    df['right_arm_angle'] = signed_angle(df['right_shoulder_x'],df['right_shoulder_y'],
+                                          df['left_shoulder_x'], df['left_shoulder_y'],
+                                          df['left_elbow_x'], df['left_elbow_y'])
+    return df
+
 if __name__ == '__main__':
     pass
 
