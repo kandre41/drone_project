@@ -9,11 +9,12 @@
 multi-target regression will have [throttle, pitch, roll, yaw]
 
 """
-from utils import interpolater, keypoint_mapper
+from utils import interpolater, keypoint_mapper, feature_engineer
 from ultralytics import YOLO
 import os
 import pandas as pd
 import numpy as np
+
 path=r"W:\VSCode\drone_project"
 frames_path=r'W:\VSCode\drone_project\datasets\images'
 
@@ -69,16 +70,19 @@ frame_count = df.shape[0]
 
 x_columns=df.filter(like='_x').columns
 y_columns=df.filter(like='_y').columns
+df = feature_engineer(df)
+dist_cols=df.filter(like='len').columns
+
 df[x_columns] = df[x_columns].sub((df['right_shoulder_x']+df['left_shoulder_x'])/2,axis=0)
 df[y_columns] = df[y_columns].sub((df['right_shoulder_y']+df['left_shoulder_y'])/2,axis=0)
 shoulder_dist=np.sqrt((df['right_shoulder_x']-df['left_shoulder_x'])**2+
                           (df['right_shoulder_y']-df['left_shoulder_y'])**2)
 # Replace 0 or NaN with the average to prevent math errors
 avg_dist = shoulder_dist.median()
-should_dist = shoulder_dist.replace(0, np.nan).fillna(avg_dist)
+shoulder_dist = shoulder_dist.replace(0, np.nan).fillna(avg_dist)
 df[x_columns] = df[x_columns].div(shoulder_dist,axis=0)
 df[y_columns] = df[y_columns].div(shoulder_dist,axis=0)
-
+df[dist_cols] = df[dist_cols].div(shoulder_dist,axis=0)
 #adding labels which need interpolation and also ffill and bfill 
 throttle_arr = np.full(frame_count,np.nan)
 pitch_arr = np.full(frame_count,np.nan)

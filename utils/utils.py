@@ -101,11 +101,6 @@ def signed_angle(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y):
     angle_bc = np.arctan2(p3_y - p2_y, p3_x - p2_x)
     
     delta_angle = angle_bc - angle_ba
-    
-    if delta_angle > np.pi:
-        delta_angle -= 2 * np.pi
-    elif delta_angle <= -np.pi:
-        delta_angle += 2 * np.pi
         
     return delta_angle
 def feature_engineer(df: pd.DataFrame) -> pd.DataFrame:

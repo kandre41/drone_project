@@ -5,7 +5,7 @@ class PoseControlNet(nn.Module):
         super(PoseControlNet, self).__init__()
         
         # Input size: Keypoints * 3 (x, y, confidence)
-        input_size = num_keypoints * 3
+        input_size = num_keypoints * 3 + 6 #six additional features
 
         self.net = nn.Sequential(
             # Layer 1: Expansion

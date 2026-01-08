@@ -1,5 +1,5 @@
 from ultralytics import YOLO
-from utils.utils import center_crop, keypoint_mapper
+from utils.utils import keypoint_mapper, feature_engineer
 import torch
 from models import PoseControlNet
 import cv2
@@ -38,6 +38,8 @@ def main():
                 df=pd.DataFrame(keypoint_mapper(xy),index=[0])
                 x_columns=df.filter(like='_x').columns
                 y_columns=df.filter(like='_y').columns
+                df = feature_engineer(df)
+                dist_cols=df.filter(like='len').columns
                 df[x_columns] = df[x_columns].sub((df['right_shoulder_x']+df['left_shoulder_x'])/2,axis=0)
                 df[y_columns] = df[y_columns].sub((df['right_shoulder_y']+df['left_shoulder_y'])/2,axis=0)
                 shoulder_dist=np.sqrt((df['right_shoulder_x']-df['left_shoulder_x'])**2+
@@ -45,12 +47,13 @@ def main():
                 # Replace 0 or NaN with the average to prevent math errors
                 avg_dist = shoulder_dist.median()
                 shoulder_dist = shoulder_dist.replace(0, np.nan).fillna(avg_dist)
-                df[x_columns] = df[x_columns].div(shoulder_dist,axis=0)
-                df[y_columns] = df[y_columns].div(shoulder_dist,axis=0)
+                df[x_columns] = df[x_columns].div(shoulder_dist, axis=0)
+                df[y_columns] = df[y_columns].div(shoulder_dist, axis=0)
+                df[dist_cols] = df[dist_cols].div(shoulder_dist, axis=0)
 
                 result_features=df.values
-                scaled_result_features=loaded_scaler.transform(result_features.reshape(1,39))
-                result_tensor=torch.tensor(scaled_result_features, dtype=torch.float32).reshape((1,39))
+                scaled_result_features=loaded_scaler.transform(result_features.reshape(1,39+6))
+                result_tensor=torch.tensor(scaled_result_features, dtype=torch.float32).reshape((1,39+6))
                 control_vector=mlp(result_tensor)
 
                 print(control_vector)
