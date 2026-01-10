@@ -5,7 +5,7 @@ from utils import center_crop
 import concurrent.futures
 
 base_path = r"W:\VSCode\drone_project\datasets"
-video_name = 'demo6'
+video_name = 'demo8'
 video_path = os.path.join(base_path, "videos", f"{video_name}.mp4")
 output_dir = os.path.join(base_path, "images", video_name)
 
