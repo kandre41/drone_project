@@ -3,3 +3,4 @@ from .utils import center_crop
 from .utils import keypoint_mapper
 from .utils import plotter
 from .utils import feature_engineer
+from .utils import MovingAverage

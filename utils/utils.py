@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import plotly.graph_objects as go
 import pandas as pd
+from collections import deque
+
 def center_crop(img,size): #center crops and downsamples to lower, square resolution that yolo expects
 
     h,w=img.shape[:2] #y,x
@@ -117,6 +119,15 @@ def feature_engineer(df: pd.DataFrame) -> pd.DataFrame:
                                           df['left_shoulder_x'], df['left_shoulder_y'],
                                           df['left_elbow_x'], df['left_elbow_y'])
     return df
+
+
+class MovingAverage:
+    def __init__(self, size=5):
+        self.queue = deque(maxlen=size)
+
+    def add_value(self, val):
+        self.queue.append(val)
+        return 1.0 * sum(self.queue) / len(self.queue)
 
 if __name__ == '__main__':
     pass

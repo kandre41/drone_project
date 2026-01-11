@@ -1,5 +1,5 @@
 from ultralytics import YOLO
-from utils.utils import keypoint_mapper, feature_engineer
+from utils.utils import keypoint_mapper, feature_engineer, MovingAverage
 import torch
 from models import PoseControlNet
 import cv2
@@ -17,8 +17,8 @@ PATH=r"W:\VSCode\drone_project"
 # '0' typically refers to the default primary camera 
 WEBCAM_SOURCE = 0
 
-drone=tello.Tello()
-drone.connect()
+#drone=tello.Tello()
+#drone.connect()
 time.sleep(15)
 def main():
     loaded_scaler = joblib.load(os.path.join(PATH,r"scaler\scaler.bin"))
@@ -26,13 +26,21 @@ def main():
     mlp = PoseControlNet(num_controls=4)
     mlp.load_state_dict(torch.load(os.path.join(PATH,r"weights\pose_control_model.pt"), weights_only=True))
     mlp.eval()
-    cap = cv2.VideoCapture(WEBCAM_SOURCE) #sets cap to the webcam source
-    #cap=cv2.VideoCapture(os.path.join(PATH,r"datasets\videos\demo1.mp4"))
+    #cap = cv2.VideoCapture(WEBCAM_SOURCE) #sets cap to the webcam source
+    cap=cv2.VideoCapture(os.path.join(PATH,r"datasets\videos\demo1.mp4"))
     if not cap.isOpened():
         print("Error: Could not open webcam.")
         exit()
     print("Webcam successfully opened. Press 'q' to exit.")
     take_off=False
+    throttle_queue = MovingAverage(5)
+    pitch_queue = MovingAverage(5)
+    roll_queue = MovingAverage(5)
+    yaw_queue = MovingAverage(5)
+    f_throttle = lambda x: x if abs(x) > 0.05 else 0
+    f_pitch = lambda x: x if abs(x) > 0.05 else 0
+    f_roll = lambda x: x if abs(x) > 0.05 else 0
+    f_yaw = lambda x: x if abs(x) > 0.05 else 0
     while cap.isOpened():
         # Read a frame from the video
         success, frame = cap.read()
@@ -44,12 +52,10 @@ def main():
                 x_columns=df.filter(like='_x').columns
                 y_columns=df.filter(like='_y').columns
                 df = feature_engineer(df)
-                print(df['right_arm_angle'])
                 if df.loc[0,'left_elbow_angle']>-2.5:
-                    if not take_off:
-                        drone.takeoff()
-                        take_off=True
-                        pass
+                    take_off=True
+                    #drone.takeoff()
+                if take_off:
                     dist_cols=df.filter(like='len').columns
                     df[x_columns] = df[x_columns].sub((df['right_shoulder_x']+df['left_shoulder_x'])/2,axis=0)
                     df[y_columns] = df[y_columns].sub((df['right_shoulder_y']+df['left_shoulder_y'])/2,axis=0)
@@ -63,16 +69,36 @@ def main():
                     df[dist_cols] = df[dist_cols].div(shoulder_dist, axis=0)
 
                     result_features=df.values
-                    scaled_result_features=loaded_scaler.transform(result_features.reshape(1,39+6))
-                    result_tensor=torch.tensor(scaled_result_features, dtype=torch.float32).reshape((1,39+6))
-                    control_vector=mlp(result_tensor) #using cpu inference seems faster than transfering to and back from the gpu
+                    scaled_result_features=loaded_scaler.transform(result_features.reshape(1,45))
+                    result_tensor=torch.tensor(scaled_result_features, dtype=torch.float32).reshape((1,45))
+                    control_vector=mlp(result_tensor).detach().flatten().numpy() #using cpu inference seems faster than transfering to and back from the gpu
+                    
+                    throttle = control_vector[0]
+                    pitch = control_vector[1]
+                    roll = control_vector[2]
+                    yaw = control_vector[3]
+                    
+                    print(throttle, pitch, roll, yaw)
 
-                    print(control_vector)
+                    throttle = f_throttle(throttle)
+                    pitch = f_pitch(pitch)
+                    roll = f_roll(roll)
+                    if abs(pitch) > 0.15: #camera angle makes it hard for MLP to decouple the pitch from the roll at higher values
+                        roll = 0 
+                    yaw = f_yaw(yaw)
+
+                    avg_throttle = throttle_queue.add_value(throttle)
+                    avg_pitch = pitch_queue.add_value(pitch)
+                    avg_roll = roll_queue.add_value(roll)
+                    avg_yaw = yaw_queue.add_value(yaw)
+
+                    print(avg_throttle, avg_pitch, avg_roll, avg_yaw)
+                    #drone.send_rc_control(avg_roll*20, avg_pitch*20, avg_throttle*20, avg_yaw*20)
                     if df.loc[0,'right_arm_angle']<3.75 and df.loc[0,'right_arm_angle']>1 and take_off:#typo the feature should be left_arm_angle, but i misnamed it to right_arm_angle
                         take_off=False
-                        drone.land()
-                        time.sleep(4)
-                        
+                        #drone.land()
+                        time.sleep(2)
+
             annotated_frame = results[0].plot()
             cv2.imshow("drone control", annotated_frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
