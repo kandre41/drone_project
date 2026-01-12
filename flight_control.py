@@ -9,25 +9,22 @@ import joblib
 import numpy as np
 from DJITelloPy.djitellopy import tello
 import time
-# 1. Load the YOLO model 
 PATH=r"W:\VSCode\drone_project"
 
-
-#Set the Webcam Source
-# '0' typically refers to the default primary camera 
+# 0 refers to the default primary camera 
 WEBCAM_SOURCE = 0
 
-#drone=tello.Tello()
-#drone.connect()
-time.sleep(15)
+drone=tello.Tello()
+drone.connect()
+time.sleep(10)
 def main():
     loaded_scaler = joblib.load(os.path.join(PATH,r"scaler\scaler.bin"))
     model = YOLO(os.path.join(PATH,r"weights\yolo11x-pose.engine"))
     mlp = PoseControlNet(num_controls=4)
     mlp.load_state_dict(torch.load(os.path.join(PATH,r"weights\pose_control_model.pt"), weights_only=True))
     mlp.eval()
-    #cap = cv2.VideoCapture(WEBCAM_SOURCE) #sets cap to the webcam source
-    cap=cv2.VideoCapture(os.path.join(PATH,r"datasets\videos\demo1.mp4"))
+    cap = cv2.VideoCapture(WEBCAM_SOURCE) #sets cap to the webcam source
+    #cap=cv2.VideoCapture(os.path.join(PATH,r"datasets\videos\demo1.mp4"))
     if not cap.isOpened():
         print("Error: Could not open webcam.")
         exit()
@@ -40,7 +37,7 @@ def main():
     f_throttle = lambda x: x if abs(x) > 0.05 else 0
     f_pitch = lambda x: x if abs(x) > 0.05 else 0
     f_roll = lambda x: x if abs(x) > 0.05 else 0
-    f_yaw = lambda x: x if abs(x) > 0.05 else 0
+    f_yaw = lambda x: x if abs(x) > 0.2 else 0
     while cap.isOpened():
         # Read a frame from the video
         success, frame = cap.read()
@@ -52,9 +49,10 @@ def main():
                 x_columns=df.filter(like='_x').columns
                 y_columns=df.filter(like='_y').columns
                 df = feature_engineer(df)
-                if df.loc[0,'left_elbow_angle']>-2.5:
+                print(df.loc[0,'left_elbow_angle'])
+                if df.loc[0,'left_elbow_angle']<-2.5 and not take_off:
                     take_off=True
-                    #drone.takeoff()
+                    drone.takeoff()
                 if take_off:
                     dist_cols=df.filter(like='len').columns
                     df[x_columns] = df[x_columns].sub((df['right_shoulder_x']+df['left_shoulder_x'])/2,axis=0)
@@ -69,8 +67,8 @@ def main():
                     df[dist_cols] = df[dist_cols].div(shoulder_dist, axis=0)
 
                     result_features=df.values
-                    scaled_result_features=loaded_scaler.transform(result_features.reshape(1,45))
-                    result_tensor=torch.tensor(scaled_result_features, dtype=torch.float32).reshape((1,45))
+                    scaled_result_features=loaded_scaler.transform(result_features.reshape(1,46))
+                    result_tensor=torch.tensor(scaled_result_features, dtype=torch.float32).reshape((1,46))
                     control_vector=mlp(result_tensor).detach().flatten().numpy() #using cpu inference seems faster than transfering to and back from the gpu
                     
                     throttle = control_vector[0]
@@ -93,12 +91,16 @@ def main():
                     avg_yaw = yaw_queue.add_value(yaw)
 
                     print(avg_throttle, avg_pitch, avg_roll, avg_yaw)
-                    #drone.send_rc_control(avg_roll*20, avg_pitch*20, avg_throttle*20, avg_yaw*20)
-                    if df.loc[0,'right_arm_angle']<3.75 and df.loc[0,'right_arm_angle']>1 and take_off:#typo the feature should be left_arm_angle, but i misnamed it to right_arm_angle
+                    drone.send_rc_control(int(avg_roll*0), int(avg_pitch*60), int(avg_throttle*100), int(avg_yaw*0))
+                    print(df.loc[0,'left_arm_angle'])
+                    if df.loc[0,'left_arm_angle']<-2.2 and take_off:
+                        drone.land()
                         take_off=False
-                        #drone.land()
-                        time.sleep(2)
-
+                        break                        
+            else:
+                drone.land()
+                time.sleep(2)
+                break
             annotated_frame = results[0].plot()
             cv2.imshow("drone control", annotated_frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):

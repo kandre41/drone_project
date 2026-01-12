@@ -104,7 +104,7 @@ def signed_angle(p1_x, p1_y, p2_x, p2_y, p3_x, p3_y):
     
     delta_angle = angle_bc - angle_ba
         
-    return delta_angle
+    return (delta_angle + np.pi) % (2 * np.pi) - np.pi
 def feature_engineer(df: pd.DataFrame) -> pd.DataFrame:
     df['left_forearm_len'] = euclidean_distance(df['left_wrist_x'],df['left_elbow_x'],df['left_wrist_y'],df['left_elbow_y'])
     df['right_forearm_len'] = euclidean_distance(df['right_wrist_x'],df['right_elbow_x'],df['right_wrist_y'],df['right_elbow_y'])
@@ -115,7 +115,10 @@ def feature_engineer(df: pd.DataFrame) -> pd.DataFrame:
     df['left_elbow_angle'] = signed_angle(df['left_wrist_x'], df['left_wrist_y'], 
                                          df['left_elbow_x'], df['left_elbow_y'],
                                          df['left_shoulder_x'], df['left_shoulder_y'])
-    df['right_arm_angle'] = signed_angle(df['right_shoulder_x'],df['right_shoulder_y'],
+    df['right_arm_angle'] = signed_angle(df['left_shoulder_x'], df['left_shoulder_y'],
+                                         df['right_shoulder_x'], df['right_shoulder_y'],
+                                         df['right_elbow_x'], df['right_elbow_y'])
+    df['left_arm_angle'] = signed_angle(df['right_shoulder_x'],df['right_shoulder_y'],
                                           df['left_shoulder_x'], df['left_shoulder_y'],
                                           df['left_elbow_x'], df['left_elbow_y'])
     return df

@@ -18,15 +18,16 @@ import numpy as np
 path=r"W:\VSCode\drone_project"
 frames_path=r'W:\VSCode\drone_project\datasets\images'
 
-folder_name = 'demo8' #change the name of the folder containing the images within the \images folder
+folder_name = 'demo12' #change the name of the folder containing the images within the \images folder
 
 model = YOLO(f'{path}\\weights\\yolo11x-pose.engine')
 start_frame=1
-end_frame=636
-throttle = [(311,0,-1,327),(333,-1,0,346),(355,0,1,372),(376,1,0,390),(400,0,-1,416),(421,-1,0,434),(440,0,1,458),(460,1,0,478)]
-pitch = [(53,0,-1,80),(92,-1,0,114),(122,0,-1,147),(159,-1,0,180),(188,0,-1,209),(221,-1,0,238),(257,0,-1,279),(282,-1,0,297),(590,0,-1,604),(610,-1,0,625)]#p
-roll = [(1,0,0,636)] #r
-yaw = [(494,0,1,517),(522,1,0,538),(545,0,-1,559),(567,-1,0,578)]
+end_frame=130
+throttle = [(1,0,0,130)]
+pitch = [(1,0,0,130)]#p
+roll = [(1,0,0,130)] #r
+yaw = [(12,0,1,33),(46,1,0,64),(72,0,-1,95),(108,-1,0,122)]
+
 
 results = model.predict(source=f'{frames_path}\\{folder_name}', half=True, device='cuda:0', stream=True)
 
@@ -102,4 +103,4 @@ df=df.loc[start_frame:end_frame-1]
 print(df.head())
 
 df.to_parquet(path=os.path.join(path,'datasets','labeled_data',f"{folder_name}.parquet"))
-df.to_csv(os.path.join(path,'datasets','labeled_data',f"{folder_name}.csv"), index=False) #csv just to visually inspect
+#df.to_csv(os.path.join(path,'datasets','labeled_data',f"{folder_name}.csv"), index=False) #csv just to visually inspect
