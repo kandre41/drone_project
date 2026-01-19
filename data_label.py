@@ -103,4 +103,4 @@ df=df.loc[start_frame:end_frame-1]
 print(df.head())
 
 df.to_parquet(path=os.path.join(path,'datasets','labeled_data',f"{folder_name}.parquet"))
-#df.to_csv(os.path.join(path,'datasets','labeled_data',f"{folder_name}.csv"), index=False) #csv just to visually inspect
+df.to_csv(os.path.join(path,'datasets','labeled_data',f"{folder_name}.csv"), index=False) #csv just to visually inspect

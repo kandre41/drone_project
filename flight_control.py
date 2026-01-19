@@ -14,17 +14,17 @@ PATH=r"W:\VSCode\drone_project"
 # 0 refers to the default primary camera 
 WEBCAM_SOURCE = 0
 
-drone=tello.Tello()
-drone.connect()
-time.sleep(10)
+#drone=tello.Tello()
+#drone.connect()
+#time.sleep(10)
 def main():
     loaded_scaler = joblib.load(os.path.join(PATH,r"scaler\scaler.bin"))
     model = YOLO(os.path.join(PATH,r"weights\yolo11x-pose.engine"))
     mlp = PoseControlNet(num_controls=4)
     mlp.load_state_dict(torch.load(os.path.join(PATH,r"weights\pose_control_model.pt"), weights_only=True))
     mlp.eval()
-    cap = cv2.VideoCapture(WEBCAM_SOURCE) #sets cap to the webcam source
-    #cap=cv2.VideoCapture(os.path.join(PATH,r"datasets\videos\demo1.mp4"))
+    #cap = cv2.VideoCapture(WEBCAM_SOURCE) #sets cap to the webcam source
+    cap=cv2.VideoCapture(os.path.join(PATH,r"datasets\videos\ft.mp4"))
     if not cap.isOpened():
         print("Error: Could not open webcam.")
         exit()
@@ -52,7 +52,7 @@ def main():
                 print(df.loc[0,'left_elbow_angle'])
                 if df.loc[0,'left_elbow_angle']<-2.5 and not take_off:
                     take_off=True
-                    drone.takeoff()
+                    #drone.takeoff()
                 if take_off:
                     dist_cols=df.filter(like='len').columns
                     df[x_columns] = df[x_columns].sub((df['right_shoulder_x']+df['left_shoulder_x'])/2,axis=0)
@@ -81,8 +81,8 @@ def main():
                     throttle = f_throttle(throttle)
                     pitch = f_pitch(pitch)
                     roll = f_roll(roll)
-                    if abs(pitch) > 0.15: #camera angle makes it hard for MLP to decouple the pitch from the roll at higher values
-                        roll = 0 
+                    #if abs(pitch) > 0.15: #camera angle makes it hard for MLP to decouple the pitch from the roll at higher values
+                        #roll = 0 
                     yaw = f_yaw(yaw)
 
                     avg_throttle = throttle_queue.add_value(throttle)
@@ -91,16 +91,16 @@ def main():
                     avg_yaw = yaw_queue.add_value(yaw)
 
                     print(avg_throttle, avg_pitch, avg_roll, avg_yaw)
-                    drone.send_rc_control(int(avg_roll*0), int(avg_pitch*60), int(avg_throttle*100), int(avg_yaw*0))
+                    #drone.send_rc_control(int(avg_roll*0), int(avg_pitch*60), int(avg_throttle*100), int(avg_yaw*0))
                     print(df.loc[0,'left_arm_angle'])
                     if df.loc[0,'left_arm_angle']<-2.2 and take_off:
-                        drone.land()
+                        #drone.land()
                         take_off=False
                         break                        
             else:
-                drone.land()
-                time.sleep(2)
-                break
+                #drone.land()
+                #break
+                pass
             annotated_frame = results[0].plot()
             cv2.imshow("drone control", annotated_frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
